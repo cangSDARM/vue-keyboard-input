@@ -4,6 +4,7 @@ import Vuetify from "vite-plugin-vuetify";
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/vue-keyboard-input/',
   plugins: [
     vue(),
     Vuetify({
