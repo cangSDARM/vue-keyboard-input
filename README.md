@@ -1,6 +1,4 @@
-Vue + SimpleKeyboard + cnchar
-
-## Feature
+Vue + SimpleKeyboard
 
 1. 支持屏幕键盘、保持单个键盘实例
 2. 支持 i18n
@@ -11,23 +9,26 @@ Vue + SimpleKeyboard + cnchar
 7. 支持 indexdb/remote 词库的获取
 8. 支持高平面的汉字输入、显示，如 𰻝
 
-## TODO
+## cnchar 绑定
 
-- [ ] 字体有些字形不支持，如 𰻝
-- [ ] fix style，如 Candidate 宽度
-- [ ] fix input-engine associate 多字的词语支持(如成语等，暂时最长 3 个字符哪怕字典里有)
-- [ ] fix input-engine，移除 cnchar 的绑定
-- [ ] 优化分词逻辑
-- [ ] 优化动态词库支持
-- [ ] 扩展 Composite 的语言
-- [ ] 扩展用户常用词库
-- [ ] 扩展输入方法，如 5 笔、双拼支持
-- [ ] 扩展快捷键 1,2,3,4,5 选词
-- [ ] 扩展单词、单字输入
-- [ ] webworker
+### Start
 
-## Start
-
+- 生成 rime 词库/字库(未编译的 .dict.yaml)
+- 将对应文件放于 `src/assets/dictionary` 下
 - npm run dev
 - npm run gen:dicts
-  - 转换 rime 词库/字库 到可支持格式
+  - 转换 rime 词库/字库供前端使用
+
+## rime 绑定
+
+### Start
+
+> !NOTE:<br/>
+> 
+> 1. 暂不支持需要额外 lua 扩展的词库，如 rime-ice。如果需要，请移步 [my-rime](https://github.com/LibreService/my_rime) 手动编译 wasm，并修改 rime.js 删除 Moudle 声明、导出 IDBFS<br/>
+> 2. worker 暂时只支持本地词库加载，远程加载请自定义 worker.ts
+
+- 生成 rime 词库(`rime 用户文件夹/build`，包含: `.schema.yaml/.prism.bin/.reverse.bin` 文件)
+- 将对应文件放于 `src/assets/ime` 下
+- npm run gen:rime-configs
+  - 生成 metadata 供前端使用

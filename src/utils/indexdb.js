@@ -1,7 +1,7 @@
 import { openDB } from 'idb';
 
 class IndexDBObjectStore {
-  /** @type {IDBPObjectStore<any, [string], string, "readwrite">} */
+  /** @type {import('idb').IDBPObjectStore<any, [string], string, "readwrite">} */
   instance = null;
   name = '';
 
@@ -18,6 +18,11 @@ class IndexDBObjectStore {
     const tx = this.instance.transaction(this.name, 'readwrite');
 
     return Promise.all(entries.map((entry) => tx.store.put(entry[1], entry[0])).concat(tx.done));
+  }
+
+  /** @param {string|undefined} key  */
+  async set(value, key) {
+    return this.instance.put(this.name, value, key);
   }
 
   async get(key) {

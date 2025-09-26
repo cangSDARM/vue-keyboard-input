@@ -7,8 +7,8 @@ import path from "node:path";
 import readline from "node:readline";
 import url from "node:url";
 
-const YAML_DICTIONARY_PATH = "./src/assets/dictionary";
-const KEYBOARD_COMPONENT_PATH = "./src/components/SimpleKeyboard/";
+const YAML_DICTIONARY_PATH = "../src/assets/dictionary";
+const KEYBOARD_COMPONENT_PATH = "../src/components/CncharKeyboard/";
 
 const base = import.meta.url;
 const resolve = (path) => url.fileURLToPath(new URL(path, base));
