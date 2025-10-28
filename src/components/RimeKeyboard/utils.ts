@@ -1,26 +1,24 @@
 const AlphabetRegex = /^[a-z]$/i;
 const NumericRegex = /^[0-9]$/i;
 
+type KeyPressHandler = (e: MayBe<MouseEvent>, button: string) => void;
 export const useKeyPress = () => {
-  const keyMap = new Map();
+  const keyMap = new Map<string, KeyPressHandler>();
 
-  /**
-   * @param {(e: MouseEvent, button: string) => void} fn
-   */
-  const bindKeyPress = (key, fn) => {
+  const bindKeyPress = (key: string, fn: KeyPressHandler) => {
     keyMap.set(key, fn);
   };
 
-  const tryCall = (fn, ...args) => {
+  const tryCall = (fn?: KeyPressHandler, ...args: Parameters<KeyPressHandler>) => {
     if (typeof fn === 'function') {
       fn(...args);
     }
   };
 
   return {
-    onKeyPress: (button, e) => {
-      e.preventDefault();
-      e.stopImmediatePropagation();
+    onKeyPress: (button: string, e?: MouseEvent) => {
+      e?.preventDefault();
+      e?.stopImmediatePropagation();
 
       tryCall(keyMap.get('{__any__}'), e, button);
       if (AlphabetRegex.test(button)) {
@@ -35,15 +33,13 @@ export const useKeyPress = () => {
   };
 };
 
-export const useShiftKeyboard = (shiftElementSelector) => {
-  /** @type {HTMLElement} */
-  let shiftElement = null;
-  /** @type {HTMLInputElement} */
-  let focusedElement = null;
+export const useShiftKeyboard = (getSelector: () => string) => {
+  let shiftElement: HTMLElement | null = null;
+  let focusedElement: HTMLInputElement | null = null;
 
   return {
-    shift: (focusedEle, { shiftAnchor = window.innerHeight / 2 } = {}) => {
-      shiftElement = document.querySelector(shiftElementSelector);
+    shift: (focusedEle: HTMLInputElement, { shiftAnchor = window.innerHeight / 2 } = {}) => {
+      shiftElement = document.querySelector(getSelector());
       focusedElement = focusedEle;
 
       if (!shiftElement || !focusedElement) return;
@@ -61,7 +57,7 @@ export const useShiftKeyboard = (shiftElementSelector) => {
     },
     unshift: () => {
       if (shiftElement) {
-        shiftElement.style.transform = null;
+        shiftElement.style.transform = '';
         shiftElement = null;
       }
       focusedElement = null;

@@ -1,164 +1,168 @@
-<script setup lang="js">
-import Keyboard from 'simple-keyboard';
-import 'simple-keyboard/build/css/index.css';
-import KeyboardIcon from './keyboard.svg';
-import { useI18n } from 'vue-i18n';
-import Candidates from './Candidates.vue';
-import { CapState, Layouts, Languages, KeyboardTypes } from './constants';
-import { useKeyPress, useShiftKeyboard } from './utils';
-import { defineOptions, defineProps, ref, shallowRef, defineExpose, defineModel, watch, useTemplateRef, computed, onMounted } from 'vue';
-
-const keyboardFocusQuery = 'keyboardFocused';
+<script setup lang="ts">
+import Keyboard from "simple-keyboard";
+import "simple-keyboard/build/css/index.css";
+import { useI18n } from "vue-i18n";
+import Candidates from "./Candidates.vue";
+import {
+  CapState,
+  KeyboardFocusQuery,
+  KeyboardTypes,
+  KeysSimpleToRime,
+  Languages,
+  Layouts,
+} from "./constants";
+import KeyboardIcon from "./keyboard.svg";
+import { useKeyPress, useShiftKeyboard } from "./utils";
+import {
+  defineOptions,
+  withDefaults,
+  defineProps,
+  computed,
+  onMounted,
+  ref,
+  useTemplateRef,
+  watch,
+  defineEmits,
+} from "vue";
 
 defineOptions({
   inheritAttrs: false,
 });
-const emits = defineEmits(['change', 'enter', 'close', 'focus']);
-const props = defineProps({
-  layoutName: {
-    type: String,
-    default: 'default',
-  },
-  language: {
-    type: String,
-    default: Languages.zhCN,
-  },
-  // 是否锁定布局
-  isLockLayout: {
-    type: Boolean,
-    default: false,
-  },
-  // 保留几位小数 layoutName为numbers时生效
-  precision: {
-    type: Number,
-    default: 2,
-  },
-  hideOnBlur: {
-    type: Boolean,
-  },
-  visible: {
-    type: Boolean,
-    default: false,
-  },
-  disabled: Boolean,
-  /** input框 */
-  inputElement: HTMLInputElement,
-  /** 应用偏移效果的元素 */
-  shiftElement: String,
-  /** 键盘类型：shifted、float */
-  type: {
-    type: String,
-    default: KeyboardTypes.Float,
-  },
-});
+const props = withDefaults(
+  defineProps<{
+    layoutName?: keyof typeof Layouts;
+    language?: ValueOf<typeof Languages>;
+    /** 是否锁定布局 */
+    isLockLayout?: boolean;
+    /** 保留几位小数 layoutName为numbers时生效 */
+    precision?: number;
+    hideOnBlur?: boolean;
+    disabled?: boolean;
+    /** input框 */
+    inputElement?: HTMLInputElement;
+    /** 应用偏移效果的元素 */
+    shiftElement: string;
+    /** 键盘类型：shifted、float */
+    type?: ValueOf<typeof KeyboardTypes>;
+  }>(),
+  {
+    layoutName: "default",
+    language: Languages.zhCN,
+    precision: 2,
+    type: KeyboardTypes.Float,
+  }
+);
+const emits = defineEmits<{
+  close: [type?: string];
+  change: [];
+  enter: [];
+  focus: [];
+}>();
 
-const rawInput = defineModel('default', { default: '' });
+const rawInput = defineModel("default", { default: "" });
 
 const { t } = useI18n();
-const keyboard = ref(null);
-const compositorRef = useTemplateRef('compositor');
-const language = ref(props.language);
-const capState = ref(CapState.Off);
+const { onKeyPress, bindKeyPress } = useKeyPress();
+const { shift, unshift } = useShiftKeyboard(() => props.shiftElement);
+
+const keyboard = ref<Keyboard>(null!);
+const compositorRef = useTemplateRef("compositor");
+const language = ref<ValueOf<typeof Languages>>(props.language);
+const capState = ref<ValueOf<typeof CapState>>(CapState.Off);
 const visibility = ref(false);
 
-const { shift, unshift } = useShiftKeyboard(props.shiftElement, {
-  sendToScreenEvent: 'keyboard-send-to-screen',
-});
+const overlayElementRef = useTemplateRef("keyboard-overlay");
+const curInputElement = useTemplateRef("input-el");
 
-const overlayElementRef = useTemplateRef('keyboard-overlay');
-const curInputElement = useTemplateRef('input-el');
-
-const symbolI6n = computed(() => t('keyboard.keys.symbol'));
-const spaceI6n = computed(() => t('keyboard.keys.space'));
+const symbolI6n = computed(() => t("keyboard.keys.symbol"));
+const spaceI6n = computed(() => t("keyboard.keys.space"));
 
 const getDisplayOptions = () => {
   return {
-    '{num}': '123',
-    '{abc}': 'ABC',
-    '{symbol}': symbolI6n.value,
-    '{bksp}': '⌫',
-    '{NONE}': ' ',
-    '{caps}': 'caps',
-    '{enter}': '⏎',
-    '{lang}': t(`keyboard.keys.${language.value}`),
-    '{space}': spaceI6n.value,
-    '{close}': `<img src=${KeyboardIcon} /><span>🞃</span>`,
-    '{arrowleft}': '←',
-    '{arrowright}': '→',
+    "{num}": "123",
+    "{abc}": "ABC",
+    "{symbol}": symbolI6n.value,
+    "{bksp}": "⌫",
+    "{NONE}": " ",
+    "{caps}": "caps",
+    "{enter}": "⏎",
+    "{lang}": t(`keyboard.keys.${language.value}`),
+    "{space}": spaceI6n.value,
+    "{close}": `<img src=${KeyboardIcon} /><span>🞃</span>`,
+    "{arrowleft}": "←",
+    "{arrowright}": "→",
   };
 };
 
 /** 当 input 不再是 keyboard 的目标元素时处理
- *
- * @param {{target: HTMLInputElement}} e
  */
-const handleInputUntargeted = (e) => {
-  delete e.target?.dataset[keyboardFocusQuery];
-  e.target?.dispatchEvent(new CustomEvent('keyboard-send-to-screen', { bubbles: true }));
-  e.target?.removeEventListener('blur', handleInputUntargeted);
+const handleInputUntargeted = (e: { target: MayBe<HTMLElement> }) => {
+  delete e.target?.dataset[KeyboardFocusQuery];
+  e.target?.dispatchEvent(
+    new CustomEvent("keyboard-send-to-screen", { bubbles: true })
+  );
+  e.target?.removeEventListener("blur", handleInputUntargeted as any);
 };
 
 const open = () => {
   visibility.value = true;
-  props.inputElement.dataset[keyboardFocusQuery] = true;
+  props.inputElement!.dataset[KeyboardFocusQuery] = "true";
 
   switch (props.type) {
     case KeyboardTypes.Float:
-      curInputElement.value.focus();
+      curInputElement.value!.focus();
       break;
     case KeyboardTypes.Shifted:
-      shift(props.inputElement, {
+      shift(props.inputElement!, {
         shiftAnchor: window.innerHeight / 2 - 50,
       });
       break;
     default:
-      console.warn('Unknown keyboard type! ', props.type);
+      console.warn("Unknown keyboard type! ", props.type);
   }
 
-  compositorRef.value.init(rawInput.value);
-  keyboard.value.setCaretPosition(rawInput.value.length);
+  compositorRef.value!.init(rawInput.value);
+  keyboard.value!.setCaretPosition(rawInput.value.length);
 
   /// must set a timeout, otherwise it will interference the keyboard showup
   setTimeout(() => {
-    document.addEventListener('click', handlePopClick);
+    document.addEventListener("click", handlePopClick);
   }, 100);
 };
 
-const close = (type) => {
-  if (props.layoutName == 'number') {
+const close = (type?: string) => {
+  if (props.layoutName == "numbers") {
     // 处理精度
     rawInput.value = rawInput.value
-      ?.replace(new RegExp(`(\\d+)\\.(\\d{${props.precision}}).*$`), '$1.$2')
-      .replace(/\.$/, '');
+      ?.replace(new RegExp(`(\\d+)\\.(\\d{${props.precision}}).*$`), "$1.$2")
+      .replace(/\.$/, "");
   }
 
   handleInputUntargeted({ target: props.inputElement });
   visibility.value = false;
   unshift();
-  compositorRef.value.reset();
-  emits('close', type);
-  document.removeEventListener('click', handlePopClick);
+  compositorRef.value!.reset();
+  emits("close", type);
+  document.removeEventListener("click", handlePopClick);
 };
 
 const keyboardInit = () => {
   if (keyboard.value) return;
 
-  keyboard.value = new Keyboard('simple-keyboard', {
+  keyboard.value = new Keyboard("simple-keyboard", {
     onKeyPress: onKeyPress,
-    layout: Layouts,
+    layout: Layouts as any,
     layoutName: props.layoutName,
     display: getDisplayOptions(),
     buttonTheme: [
       {
-        class: 'hg-highlight',
-        buttons: 'Q q',
+        class: "hg-highlight",
+        buttons: "Q q",
       },
     ],
     // theme: 'hg-theme-default init-keyboard' // 添加自定义class处理清空逻辑
   });
 };
-
-const { onKeyPress, bindKeyPress } = useKeyPress();
 
 const handleLock = () => {
   switch (capState.value) {
@@ -170,16 +174,15 @@ const handleLock = () => {
       break;
   }
 
-  const shiftLayout = capState.value === CapState.Off ? 'default' : 'shift';
+  const shiftLayout = capState.value === CapState.Off ? "default" : "shift";
   keyboard.value.setOptions({
     layoutName: shiftLayout,
   });
 };
 
-/** @param {MouseEvent | string} lang */
-const handleLang = (lang) => {
-  if (typeof lang === 'string') {
-    language.value = lang;
+const handleLang = (lang: MouseEvent | string) => {
+  if (typeof lang === "string") {
+    language.value = lang as any;
   } else {
     // 切换中英文输入法
     if (language.value === Languages.en) {
@@ -190,7 +193,7 @@ const handleLang = (lang) => {
   }
 
   const options = getDisplayOptions();
-  compositorRef.value.setOption('ascii_mode', language.value === Languages.en);
+  compositorRef.value!.setOption("ascii_mode", language.value === Languages.en);
 
   keyboard.value.setOptions({
     display: options,
@@ -199,84 +202,82 @@ const handleLang = (lang) => {
 
 const handleClear = () => {
   keyboard.value.clearInput();
-  compositorRef.value.reset();
-  rawInput.value = '';
+  compositorRef.value!.reset();
+  rawInput.value = "";
 };
 
 const handleEnter = () => {
-  compositorRef.value.onKeyPress('{space}').then(() => {
-    emits('enter');
+  compositorRef.value!.onKeyPress("{space}")?.then(() => {
+    emits("enter");
     close();
   });
 };
 
-const handleArrow = (num) => {
+const handleArrow = (num: number) => {
   // 处理左右箭头下标位置
-  const index = keyboard.value.getCaretPositionEnd();
+  const index = keyboard.value.getCaretPositionEnd()!;
   if (num == 0 && index - 1 >= 0) {
     keyboard.value.setCaretPosition(index - 1);
   } else if (num == 1 && index + 1 <= (rawInput.value?.length || 0)) {
     keyboard.value.setCaretPosition(index + 1);
   }
 };
-bindKeyPress('{__any__}', (_, button) => {
-  const Replaced = {
-    '{bksp}': '{BackSpace}',
-    '{space}': '{space}', // 上屏
-    '{arrowleft}': '{Left}',
-    '{arrowright}': '{Right}',
-  };
-  const Escaped = ['{enter}', '{close}'];
-  const AsSpaced = ['{lang}', '{caps}', '{clear}', '{symbol}', '{abc}'];
-
-  if (Escaped.includes(button)) return;
-  if (Replaced[button]) {
-    compositorRef.value.onKeyPress(Replaced[button]);
-  } else if (AsSpaced.includes(button)) {
-    compositorRef.value.onKeyPress(Replaced['{space}']);
+bindKeyPress("{__any__}", (_: any, button: string) => {
+  if (KeysSimpleToRime.Escaped.includes(button)) return;
+  // @ts-ignore
+  if (KeysSimpleToRime.Replaced[button]) {
+    // @ts-ignore
+    compositorRef.value?.onKeyPress(KeysSimpleToRime.Replaced[button]);
+  } else if (KeysSimpleToRime.AsSpaced.includes(button)) {
+    compositorRef.value?.onKeyPress(KeysSimpleToRime.Replaced["{space}"]);
   } else {
-    compositorRef.value.onKeyPress(button);
+    compositorRef.value?.onKeyPress(button);
   }
 });
-bindKeyPress('{caps}', handleLock);
-bindKeyPress('{lang}', handleLang);
-bindKeyPress('{clear}', handleClear);
-bindKeyPress('{enter}', handleEnter);
-bindKeyPress('{close}', close);
-bindKeyPress('{num}', () => {
-  compositorRef.value.reset();
+bindKeyPress("{caps}", handleLock);
+bindKeyPress(
+  "{lang}",
+  handleLang as unknown as (lang: MayBe<MouseEvent>) => void
+);
+bindKeyPress("{clear}", handleClear);
+bindKeyPress("{enter}", handleEnter);
+bindKeyPress("{close}", close as unknown as () => void);
+bindKeyPress("{num}", () => {
+  compositorRef.value?.reset();
+  compositorRef.value?.setOption("ascii_mode", true);
   keyboard.value.setOptions({
-    layoutName: 'numbers',
+    layoutName: "numbers",
   });
 });
-bindKeyPress('{abc}', () => {
+bindKeyPress("{abc}", () => {
   keyboard.value.setOptions({
-    layoutName: 'default',
+    layoutName: "default",
   });
 });
-bindKeyPress('{symbol}', () => {
+bindKeyPress("{symbol}", () => {
   keyboard.value.setOptions({
-    layoutName: 'symbols',
+    layoutName: "symbols",
   });
 });
-bindKeyPress('{arrowleft}', () => handleArrow(0));
-bindKeyPress('{arrowright}', () => handleArrow(1));
+bindKeyPress("{arrowleft}", () => handleArrow(0));
+bindKeyPress("{arrowright}", () => handleArrow(1));
 
-/** @param {MouseEvent} e */
-const handlePopClick = (e) => {
+const handlePopClick = (e: MouseEvent) => {
   switch (props.type) {
     case KeyboardTypes.Float:
       // 空白区域
       if (e.target === overlayElementRef.value && props.hideOnBlur) {
-        close('blur');
+        close("blur");
       }
       break;
     case KeyboardTypes.Shifted: {
       const elements = document.elementsFromPoint(e.clientX, e.clientY);
-      const newInputElement = elements.find((element) => element instanceof HTMLInputElement);
+      const newInputElement = elements.find(
+        (element) => element instanceof HTMLInputElement
+      );
       if (!newInputElement) {
-        if (!elements.includes(keyboard.value.keyboardDOM.parentElement)) {
-          close('blur');
+        if (!elements.includes(keyboard.value!.keyboardDOM.parentElement!)) {
+          close("blur");
         }
         return;
       }
@@ -289,33 +290,31 @@ watch(
   () => props.inputElement,
   (element) => {
     if (props.type === KeyboardTypes.Shifted) {
-      element?.addEventListener('blur', handleInputUntargeted);
+      element?.addEventListener("blur", handleInputUntargeted as any);
     }
-  },
+    if (element) {
+      open();
+    } else {
+      close();
+    }
+  }
 );
 watch(
   () => props.layoutName,
   (layout) => {
+    if (layout !== "default") {
+      compositorRef.value?.setOption("ascii_mode", true);
+    }
     if (keyboard.value) {
       keyboard.value.setOptions({
         layoutName: layout,
       });
     }
-  },
+  }
 );
 watch(() => props.language, handleLang);
-watch(
-  () => props.visible,
-  (nv) => {
-    if (nv) {
-      open();
-    } else {
-      close();
-    }
-  },
-);
 watch(rawInput, (nv) => {
-  emits('change');
+  emits("change");
   if (keyboard.value.getInput() !== nv) {
     keyboard.value.setInput(rawInput.value);
   }
@@ -336,7 +335,7 @@ onMounted(() => {
             ? 'transparent'
             : 'rgba(var(--v-theme-on-surface), 0.25)',
       }"
-      v-show="visible"
+      v-show="visibility"
     >
       <input
         ref="input-el"
@@ -409,7 +408,7 @@ onMounted(() => {
   }
 
   .simple-keyboard {
-    font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+    font-family: SourceHanSans, Ariral, Plangothic;
     background-color: var(--keyboard-bg, #ececec);
     z-index: calc($keyboard-z-index + 2);
 

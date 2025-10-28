@@ -1,4 +1,7 @@
-export const pipe = async (input = undefined, ...promiseFns) => {
+export const pipe = async <I>(
+  input: I,
+  ...promiseFns: ((result: any, input: I) => Promise<any>)[]
+) => {
   let result = input;
   for (const fn of promiseFns) {
     try {

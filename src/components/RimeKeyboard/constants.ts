@@ -1,12 +1,26 @@
 export const CapState = {
   Off: 0,
   Always: 1,
+} as const;
+
+export const KeyboardFocusQuery = 'keyboardFocused';
+
+/** 将 simple keyboard 的 keycode 映射到 rime */
+export const KeysSimpleToRime = {
+  Replaced: {
+    '{bksp}': '{BackSpace}',
+    '{space}': '{space}', // 上屏
+    '{arrowleft}': '{Left}',
+    '{arrowright}': '{Right}',
+  },
+  Escaped: ['{enter}', '{close}'],
+  AsSpaced: ['{lang}', '{caps}', '{clear}', '{symbol}', '{abc}'],
 };
 
 export const Languages = {
   zhCN: 'zh-cn',
   en: 'en',
-};
+} as const;
 
 export const Layouts = {
   // 默认布局
@@ -32,11 +46,11 @@ export const Layouts = {
     '` · ￥ ！ ， 。 《 》 ～ {abc}',
   ],
   numbers: ['+ 1 2 3 {bksp}', '- 4 5 6 {space}', '* 7 8 9 {enter}', '/ , 0 . {abc}'],
-};
+} as const;
 
 export const KeyboardTypes = {
   /** 类似于手机，键盘挤出界面 */
   Shifted: 'shifted',
   /** 键盘自带悬浮框输入 */
   Float: 'float',
-};
+} as const;

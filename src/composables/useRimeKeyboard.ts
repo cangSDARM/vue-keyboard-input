@@ -2,14 +2,16 @@ import { ref, shallowRef } from "vue";
 
 export default function () {
   let element: HTMLInputElement | null = null;
+
   const visible = ref(false);
-  const value = ref("");
+  const value = ref('');
   const options = shallowRef<Record<string, any>>({});
+  const shiftElement = ref('#app');
 
   const syncInput = () => {
     if (element) {
       element.value = value.value;
-      element.dispatchEvent(new Event("input", { bubbles: true }));
+      element.dispatchEvent(new Event('input', { bubbles: true }));
     }
   };
 
@@ -17,11 +19,11 @@ export default function () {
     syncInput();
     visible.value = false;
     element = null;
-    value.value = "";
+    value.value = '';
     options.value = {};
   };
 
-  const open = (ele: HTMLElement, opts = {}) => {
+  const open = (ele: HTMLInputElement, opts = {}) => {
     if (ele instanceof HTMLInputElement) {
       element = ele;
       visible.value = true;
@@ -33,6 +35,7 @@ export default function () {
   };
 
   return {
+    shiftElement,
     syncInput,
     value,
     options,

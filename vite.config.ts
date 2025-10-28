@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import Vuetify, { transformAssetUrls } from "vite-plugin-vuetify";
 import Unfonts from "unplugin-fonts/vite";
+import path from 'node:path';
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -11,6 +12,12 @@ export default defineConfig({
   },
   build: {
     ssrEmitAssets: true,
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, 'src'), // 确保别名指向视图目录的根
+    },
+    extensions: ['.js', '.json', '.jsx', '.mjs', '.ts', '.tsx', '.vue'],
   },
   plugins: [
     Unfonts({

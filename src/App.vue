@@ -80,11 +80,10 @@ onBeforeMount(() => {
     v-if="!toggleKeyboard"
     @close="rimeKeyboard.close"
     @change="rimeKeyboard.syncInput"
-    :visible="rimeKeyboard.visible.value"
     v-model:default="rimeKeyboard.value.value"
     v-bind="rimeKeyboard.options.value"
     hide-on-blur
-    shift-element="#app"
+    :shift-element="rimeKeyboard.shiftElement.value"
     type="shifted"
   ></RimeKeyboard>
 </template>

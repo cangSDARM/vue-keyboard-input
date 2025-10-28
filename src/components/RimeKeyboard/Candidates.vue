@@ -7,13 +7,14 @@ import {
   setOption,
   setPageSize,
   isPrintable,
-} from '../../services/IME/Provider';
-import { pipe } from '../../utils/promise';
-import Lo from 'lodash';
-import { ref, defineProps, defineModel, watch, defineExpose } from 'vue';
-
-const UppercaseRegex = /[A-Z]+$/i;
-const NumericRegex = /^[0-9]$/i;
+} from '@/services/IME/Provider';
+import { pipe } from '@/utils/promise';
+import {
+  defineProps,
+  ref,
+  watch,
+  defineEmits,
+} from "vue";
 
 const props = defineProps({
   pageSize: {
