@@ -1,17 +1,20 @@
-const { spawnSync } = require('child_process');
-const yaml = require('js-yaml');
-const fs = require('node:fs');
-const { join: joinPath, dirname, basename } = require('node:path');
-const { parseArgs } = require('node:util');
-const { platform } = require('node:os');
+const { spawnSync } = require("child_process");
+const yaml = require("js-yaml");
+const fs = require("node:fs");
+const { join: joinPath, dirname, basename } = require("node:path");
+const { parseArgs } = require("node:util");
+const { platform } = require("node:os");
 // const packageJson = require('../package.json');
-const { createHash } = require('node:crypto');
+const { createHash } = require("node:crypto");
 
 const { values: args } = parseArgs({
   args: process.argv.slice(2),
   options: {
     path: {
-      type: 'string',
+      type: "string",
+    },
+    help: {
+      type: "boolean",
     },
   },
 });
@@ -27,8 +30,8 @@ const utils = {
   parseYaml: (schemaYaml) => {
     const content = yaml.load(
       fs.readFileSync(joinPath(schemaYaml), {
-        encoding: 'utf-8',
-      }),
+        encoding: "utf-8",
+      })
     );
     return content;
   },
@@ -49,7 +52,7 @@ const utils = {
   },
   md5sum: (path) => {
     const content = fs.readFileSync(path);
-    return createHash('md5').update(content).digest('hex');
+    return createHash("md5").update(content).digest("hex");
   },
 };
 
@@ -65,8 +68,12 @@ async function main() {
     .filter((dirent) => dirent.isDirectory())
     .reduce((acc, dirent) => {
       const dir = utils.direntPath(dirent);
-      const files = fs.readdirSync(dir, { withFileTypes: true }).filter((sub) => sub.isFile());
-      const yamls = files.filter((subDirent) => subDirent.name.endsWith('.yaml'));
+      const files = fs
+        .readdirSync(dir, { withFileTypes: true })
+        .filter((sub) => sub.isFile());
+      const yamls = files.filter((subDirent) =>
+        subDirent.name.endsWith(".yaml")
+      );
 
       targetFiles[dirent.name] = files.map((file) => ({
         name: file.name,
@@ -78,7 +85,7 @@ async function main() {
           dirent: yaml,
           dir,
           yaml: utils.parseYaml(utils.direntPath(yaml)),
-        })),
+        }))
       );
     }, []);
 
@@ -92,12 +99,35 @@ async function main() {
   }
 
   await Promise.all([
-    utils.writeJson('schema-name.json', schemaName),
-    utils.writeJson('dependency-map.json', dependencyMap),
-    utils.writeJson('schema-target.json', schemaTarget),
-    utils.writeJson('schema-files.json', schemaFiles),
-    utils.writeJson('target-files.json', targetFiles),
+    utils.writeJson("schema-name.json", schemaName),
+    utils.writeJson("dependency-map.json", dependencyMap),
+    utils.writeJson("schema-target.json", schemaTarget),
+    utils.writeJson("schema-files.json", schemaFiles),
+    utils.writeJson("target-files.json", targetFiles),
   ]);
+}
+
+if (process.env.npm_config_help || args.help) {
+  console.log("生成 virtual-keyboard IME 需要的 json 文件");
+  console.log("\tnpm run setup:ime");
+  console.log("");
+  console.log(`
+目录下需要有:
+  - ime-name
+    - sub-ime-name.schema.yaml
+    - *.reverse.bin
+    - *.prism.bin
+    - *.table.bin
+yaml(主配置文件)内需要有:
+  translator:
+    dictionary
+    prism
+否则对应 bin 文件必须和 yaml 文件同名
+
+> 相关文件可以通过"rime输入法/用户文件夹/build"内找到
+`);
+  console.log("");
+  process.exit(0);
 }
 
 main().catch(console.error);

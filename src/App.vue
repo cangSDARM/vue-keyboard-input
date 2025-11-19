@@ -100,7 +100,7 @@ onBeforeMount(() => {
     v-bind="rimeKeyboard.options.value"
     hide-on-blur
     type="shifted"
-  ></RimeKeyboard>
+  />
 </template>
 
 <style scoped lang="scss">

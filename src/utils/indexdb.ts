@@ -1,35 +1,31 @@
-import { openDB } from 'idb';
+import { type IDBPDatabase, openDB } from 'idb';
 
 class IndexDBObjectStore {
-  /** @type {import('idb').IDBPObjectStore<any, [string], string, "readwrite">} */
-  instance = null;
+  instance: IDBPDatabase<unknown>;
   name = '';
 
-  /**
-   * @param {IDBPDatabase} dbInstance
-   * @param {string} storeName
-   */
-  constructor(dbInstance, storeName) {
+  constructor(dbInstance: IDBPDatabase<unknown>, storeName: string) {
     this.instance = dbInstance;
     this.name = storeName;
   }
 
-  async setMany(entries = []) {
+  async setMany(entries: [string, any][] = []) {
     const tx = this.instance.transaction(this.name, 'readwrite');
 
-    return Promise.all(entries.map((entry) => tx.store.put(entry[1], entry[0])).concat(tx.done));
+    return Promise.all(
+      entries.map((entry) => tx.store.put(entry[1], entry[0])).concat(tx.done as any),
+    );
   }
 
-  /** @param {string|undefined} key  */
-  async set(value, key) {
+  async set<V>(value: V, key?: IDBValidKey) {
     return this.instance.put(this.name, value, key);
   }
 
-  async get(key) {
+  async get(key: IDBValidKey) {
     return this.instance.get(this.name, key);
   }
 
-  async del(key) {
+  async del(key: IDBValidKey) {
     return this.instance.delete(this.name, key);
   }
 
@@ -49,8 +45,7 @@ class IndexDBObjectStore {
 export class IndexDB {
   dbName = '';
   newCreated = false;
-  /** @type {IDBPDatabase} */
-  instance;
+  instance: IDBPDatabase<any> = null!;
 
   constructor() {}
 
@@ -58,12 +53,16 @@ export class IndexDB {
    *
    * see: https://developer.mozilla.org/zh-CN/docs/Web/API/IDBDatabase/createObjectStore
    */
-  async open(dbName = 'idb', stores = []) {
+  async open(
+    dbName = 'idb',
+    stores: string[] = [],
+    storeOptions: Record<string, IDBObjectStoreParameters> = {},
+  ) {
     this.dbName = dbName;
     this.instance = await openDB(this.dbName, 1, {
       upgrade: (db) => {
         stores.forEach((storeName) => {
-          db.createObjectStore(storeName);
+          db.createObjectStore(storeName, storeOptions[storeName]);
         });
         this.newCreated = true;
       },
@@ -75,11 +74,7 @@ export class IndexDB {
   }
 }
 
-/**
- * @param {any} jsonData
- * @param {IndexDBObjectStore} store
- */
-export async function dumpLargeJSON(jsonData, store) {
+export async function dumpLargeJSON(jsonData: any, store: IndexDBObjectStore) {
   const batchSize = 500;
   const entries = Object.entries(jsonData);
 
