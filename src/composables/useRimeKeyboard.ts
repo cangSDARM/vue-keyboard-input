@@ -18,6 +18,7 @@ export default function () {
   const close = () => {
     syncInput();
     visible.value = false;
+    element?.blur();  // make it blur
     element = null;
     value.value = '';
     options.value = {};
@@ -26,6 +27,8 @@ export default function () {
   const open = (ele: HTMLInputElement, opts = {}) => {
     if (ele instanceof HTMLInputElement) {
       element = ele;
+      // select all text when open
+      element.select();
       visible.value = true;
       value.value = ele.value;
       options.value = opts;

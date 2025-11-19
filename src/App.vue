@@ -6,6 +6,20 @@ import useCncharKeyboard from "./composables/useCncharKeyboard";
 import useRimeKeyboard from "./composables/useRimeKeyboard";
 import { initIME } from "./services/IME/Provider";
 
+const recognition = async (image) => {
+  await new Promise((resolve) => setTimeout(resolve, 1_000));
+  return [
+    "This",
+    "Is",
+    "A",
+    "Sample",
+    "Return",
+    "For",
+    "Handwrite",
+    "Recognition",
+  ];
+};
+
 /// cnchar's keyboard
 const valueA = ref("shuguodapei");
 const valueB = ref("ibuxing");
@@ -78,12 +92,13 @@ onBeforeMount(() => {
   />
   <RimeKeyboard
     v-if="!toggleKeyboard"
+    :shift-element="rimeKeyboard.shiftElement.value"
+    @handwrite-recognition="recognition"
     @close="rimeKeyboard.close"
     @change="rimeKeyboard.syncInput"
     v-model:default="rimeKeyboard.value.value"
     v-bind="rimeKeyboard.options.value"
     hide-on-blur
-    :shift-element="rimeKeyboard.shiftElement.value"
     type="shifted"
   ></RimeKeyboard>
 </template>

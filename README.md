@@ -8,6 +8,7 @@ Vue + SimpleKeyboard
 6. 支持 rime 词库导入
 7. 支持 indexdb/remote 词库的获取
 8. 支持高平面的汉字输入、显示，如 𰻝
+9. 支持手写输入
 
 ## cnchar 绑定
 
