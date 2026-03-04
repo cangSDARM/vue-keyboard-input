@@ -5,13 +5,17 @@ const NumericRegex = /^[0-9]$/i;
 
 export const useInputCursor = (props: { value: Ref<string> }) => {
   /** 输入保留的前缀 */
-  const prior = ref('');
+  const prior = ref("");
   /** 输入保留的后缀 */
-  const posterior = ref('');
+  const posterior = ref("");
   const range = ref({ start: 0, end: 0 as Maybe<number> });
   const element = shallowRef<Maybe<HTMLInputElement>>();
 
-  const onSelectionRangeChange = (value: string, start: Maybe<number>, end: Maybe<number>) => {
+  const onSelectionRangeChange = (
+    value: string,
+    start: Maybe<number>,
+    end: Maybe<number>,
+  ) => {
     range.value = { start: start ?? 0, end };
     prior.value = value.substring(0, start!);
     posterior.value = value.substring(end!);
@@ -19,25 +23,29 @@ export const useInputCursor = (props: { value: Ref<string> }) => {
 
   const onSelectRange = () => {
     const target = element.value;
-    onSelectionRangeChange(props.value.value, target?.selectionStart, target?.selectionEnd);
+    onSelectionRangeChange(
+      props.value.value,
+      target?.selectionStart,
+      target?.selectionEnd,
+    );
   };
 
   const cleanup = () => {
-    element.value?.removeEventListener('select', onSelectRange); // drag & select
-    element.value?.removeEventListener('keyup', onSelectRange); // click to some where
+    element.value?.removeEventListener("select", onSelectRange); // drag & select
+    element.value?.removeEventListener("keyup", onSelectRange); // click to some where
   };
 
   watch(
     element,
     (el) => {
       cleanup();
-      el?.addEventListener('select', onSelectRange); // drag & select
-      el?.addEventListener('pointerup', onSelectRange); // click to some where
+      el?.addEventListener("select", onSelectRange); // drag & select
+      el?.addEventListener("pointerup", onSelectRange); // click to some where
       onSelectRange();
     },
-    { flush: 'post' },
+    { flush: "post" },
   );
-  watch(props.value, onSelectRange, { immediate: true, flush: 'post' }); // value changed
+  watch(props.value, onSelectRange, { immediate: true, flush: "post" }); // value changed
 
   onBeforeUnmount(() => cleanup);
 
@@ -51,32 +59,51 @@ export const useInputCursor = (props: { value: Ref<string> }) => {
 
 type KeyPressHandler = (e: Maybe<MouseEvent>, button: string) => void;
 export const useKeyPress = () => {
-  const keyMap = new Map<string, KeyPressHandler>();
+  const keydownMap = new Map<string, KeyPressHandler>();
+  const keyupMap = new Map<string, KeyPressHandler>();
 
-  const bindKeyPress = (key: string, fn: KeyPressHandler) => {
-    keyMap.set(key, fn);
+  const bindKeyPress = (
+    key: string,
+    fn: KeyPressHandler,
+    option = { activate: "up" },
+  ) => {
+    switch (option.activate) {
+      case "up":
+        keyupMap.set(key, fn);
+        break;
+      case "down":
+        keydownMap.set(key, fn);
+        break;
+    }
   };
 
-  const tryCall = (fn?: KeyPressHandler, ...args: Parameters<KeyPressHandler>) => {
-    if (typeof fn === 'function') {
+  const tryCall = (
+    fn?: KeyPressHandler,
+    ...args: Parameters<KeyPressHandler>
+  ) => {
+    if (typeof fn === "function") {
       fn(...args);
     }
   };
 
-  return {
-    onKeyPress: (button: string, e?: MouseEvent) => {
+  const handler =
+    (map: Map<string, KeyPressHandler>) => (button: string, e?: MouseEvent) => {
       e?.preventDefault();
       e?.stopImmediatePropagation();
 
-      tryCall(keyMap.get('{__any__}'), e, button);
+      tryCall(map.get("{__any__}"), e, button);
       if (AlphabetRegex.test(button)) {
-        tryCall(keyMap.get('{alphabet}'), e, button);
+        tryCall(map.get("{alphabet}"), e, button);
       } else if (NumericRegex.test(button)) {
-        tryCall(keyMap.get('{numeric}'), e, button);
+        tryCall(map.get("{numeric}"), e, button);
       }
 
-      tryCall(keyMap.get(button), e, button);
-    },
+      tryCall(map.get(button), e, button);
+    };
+
+  return {
+    onKeyReleased: handler(keyupMap),
+    onKeyPress: handler(keydownMap),
     bindKeyPress,
   };
 };
@@ -86,7 +113,10 @@ export const useShiftKeyboard = (getSelector: () => string) => {
   let focusedElement: HTMLInputElement | null = null;
 
   return {
-    shift: (focusedEle: HTMLInputElement, { shiftAnchor = window.innerHeight / 2 } = {}) => {
+    shift: (
+      focusedEle: HTMLInputElement,
+      { shiftAnchor = window.innerHeight / 2 } = {},
+    ) => {
       shiftElement = document.querySelector(getSelector());
       focusedElement = focusedEle;
 
@@ -97,7 +127,7 @@ export const useShiftKeyboard = (getSelector: () => string) => {
 
       const originalShiftY = getComputedStyle(shiftElement).transform;
       // cannot handle the shifted element
-      if (originalShiftY !== 'none') return;
+      if (originalShiftY !== "none") return;
 
       if (shiftY > 0) return;
 
@@ -105,7 +135,7 @@ export const useShiftKeyboard = (getSelector: () => string) => {
     },
     unshift: () => {
       if (shiftElement) {
-        shiftElement.style.transform = '';
+        shiftElement.style.transform = "";
         shiftElement = null;
       }
       focusedElement = null;

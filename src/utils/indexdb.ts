@@ -1,8 +1,8 @@
-import { type IDBPDatabase, openDB } from 'idb';
+import { type IDBPDatabase, openDB } from "idb";
 
 class IndexDBObjectStore {
   instance: IDBPDatabase<unknown>;
-  name = '';
+  name = "";
 
   constructor(dbInstance: IDBPDatabase<unknown>, storeName: string) {
     this.instance = dbInstance;
@@ -10,10 +10,12 @@ class IndexDBObjectStore {
   }
 
   async setMany(entries: [string, any][] = []) {
-    const tx = this.instance.transaction(this.name, 'readwrite');
+    const tx = this.instance.transaction(this.name, "readwrite");
 
     return Promise.all(
-      entries.map((entry) => tx.store.put(entry[1], entry[0])).concat(tx.done as any),
+      entries
+        .map((entry) => tx.store.put(entry[1], entry[0]))
+        .concat(tx.done as any),
     );
   }
 
@@ -43,7 +45,7 @@ class IndexDBObjectStore {
 }
 
 export class IndexDB {
-  dbName = '';
+  dbName = "";
   newCreated = false;
   instance: IDBPDatabase<any> = null!;
 
@@ -54,7 +56,7 @@ export class IndexDB {
    * see: https://developer.mozilla.org/zh-CN/docs/Web/API/IDBDatabase/createObjectStore
    */
   async open(
-    dbName = 'idb',
+    dbName = "idb",
     stores: string[] = [],
     storeOptions: Record<string, IDBObjectStoreParameters> = {},
   ) {
@@ -69,7 +71,7 @@ export class IndexDB {
     });
   }
 
-  async openStore(storeName = 'keyval') {
+  async openStore(storeName = "keyval") {
     return new IndexDBObjectStore(this.instance, storeName);
   }
 }

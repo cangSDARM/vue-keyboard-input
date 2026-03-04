@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed } from "vue";
 
 const props = defineProps<{
   preview?: string[];
@@ -13,7 +13,9 @@ const props = defineProps<{
   };
 }>();
 
-const nextDisabled = computed(() => props.pagination.isLastPage || props.candidates.length === 0);
+const nextDisabled = computed(
+  () => props.pagination.isLastPage || props.candidates.length === 0,
+);
 </script>
 
 <template>
@@ -65,7 +67,7 @@ const nextDisabled = computed(() => props.pagination.isLastPage || props.candida
       </v-btn>
       <span class="page-info">
         {{ pagination.current + 1 }}
-        {{ pagination.totalPages > 0 ? ' / ' + pagination.totalPages : '' }}
+        {{ pagination.totalPages > 0 ? " / " + pagination.totalPages : "" }}
       </span>
     </section>
   </div>

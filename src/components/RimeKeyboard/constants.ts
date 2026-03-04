@@ -3,71 +3,70 @@ export const CapState = {
   Always: 1,
 } as const;
 
-export const KeyboardFocusQuery = 'keyboardFocused';
+export const KeyboardFocusQuery = "keyboardFocused";
 
 /** 将 simple keyboard 的 keycode 映射到 rime */
 export const KeysSimpleToRime = {
   Replaced: {
-    '{bksp}': '{BackSpace}',
-    '{space}': '{space}', // 上屏
-    '{arrowleft}': '{Left}',
-    '{arrowright}': '{Right}',
+    "{bksp}": "{BackSpace}",
+    "{space}": "{space}", // 上屏
+    "{arrowleft}": "{Left}",
+    "{arrowright}": "{Right}",
   },
-  Escaped: ['{enter}', '{close}'],
+  Escaped: ["{enter}", "{close}"],
   AsSpaced: [
-    '{lang}',
-    '{caps}',
-    '{clear}',
-    '{num}',
-    '{symbol}',
-    '{abc}',
-    '{handwriting}',
-    '{abcd}',
+    "{lang}",
+    "{caps}",
+    "{clear}",
+    "{num}",
+    "{symbol}",
+    "{abc}",
+    "{handwriting}",
+    "{abcd}",
   ],
 };
 
 export const Languages = {
-  zhCN: 'zh-cn',
-  en: 'en',
+  zhCN: "zh-cn",
+  en: "en",
 } as const;
 
 export const Layouts = {
   // 默认布局
   default: [
-    '1 2 3 4 5 6 7 8 9 0',
-    'q w e r t y u i o p',
-    '{NONE} a s d f g h j k l {NONE}',
-    '{caps} z x c v b n m {bksp}',
-    '{symbol} {num} {space} {handwriting} {lang} {enter}',
+    "1 2 3 4 5 6 7 8 9 0",
+    "q w e r t y u i o p",
+    "{NONE} a s d f g h j k l {NONE}",
+    "{caps} z x c v b n m {bksp}",
+    "{symbol} {num} {space} {handwriting} {lang} {enter}",
   ],
   // 大小写
   shift: [
-    '~ ! @ # $ % ^ & * ( ) _ +',
-    'Q W E R T Y U I O P',
-    '{NONE} A S D F G H J K L {NONE}',
-    '{caps} Z X C V B N M {bksp}',
-    '{symbol} {num} {space} {handwriting} {lang} {enter}',
+    "~ ! @ # $ % ^ & * ( ) _ +",
+    "Q W E R T Y U I O P",
+    "{NONE} A S D F G H J K L {NONE}",
+    "{caps} Z X C V B N M {bksp}",
+    "{symbol} {num} {space} {handwriting} {lang} {enter}",
   ],
   symbols: [
-    '~ ! @ # $ % ^ & * ( )',
-    '- _ = + [ ] { } | \\',
-    ': ; \' " < > , . / ?',
-    '{NONE} ` ¥ ！ ， 。 《 》 （ ） {NONE}',
-    '{abc} {num} {space} {bksp} {enter}',
+    "~ ! @ # $ % ^ & * ( )",
+    "- _ = + [ ] { } | \\",
+    ": ; ' \" < > , . / ?",
+    "{NONE} ` ¥ ！ ， 。 《 》 （ ） {NONE}",
+    "{abc} {num} {space} {bksp} {enter}",
   ],
-  numbers: ['+ 1 2 3 {bksp}', '- 4 5 6 {space}', '* 7 8 9 /', '{abc} , 0 . {enter}'],
-  handwrite: [
-    '{bksp}',
-    ',',
-    '.',
-    '?',
-    '{symbol} {num} {space} {abcd} {enter}',
+  numbers: [
+    "+ 1 2 3 {bksp}",
+    "- 4 5 6 {space}",
+    "* 7 8 9 /",
+    "{abc} , 0 . {enter}",
   ],
+  handwrite: ["{bksp}", ",", ".", "?", "{symbol} {num} {space} {abcd} {enter}"],
 } as const;
 
 export const KeyboardTypes = {
   /** 类似于手机，键盘挤出界面 */
-  Shifted: 'shifted',
+  Shifted: "shifted",
   /** 键盘自带悬浮框输入 */
-  Float: 'float',
+  Float: "float",
 } as const;

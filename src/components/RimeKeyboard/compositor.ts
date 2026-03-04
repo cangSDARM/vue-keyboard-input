@@ -6,12 +6,12 @@ import {
   setIME,
   setOption,
   setPageSize,
-} from '@/services/IME/Provider';
-import type { RIME_RESULT } from '@/services/IME/type';
-import { pipe } from '@/utils/promise';
-import { debounce } from 'lodash';
-import { useInputCursor } from './utils';
-import { computed, ref, watch, type Ref, type ShallowRef } from 'vue';
+} from "@/services/IME/Provider";
+import type { RIME_RESULT } from "@/services/IME/type";
+import { pipe } from "@/utils/promise";
+import { debounce } from "lodash";
+import { useInputCursor } from "./utils";
+import { computed, ref, watch, type Ref, type ShallowRef } from "vue";
 
 // XXX: unify two of those compositor
 
@@ -34,7 +34,7 @@ export const Compositors = {
 const backspaceComposite = (cursor: ReturnType<typeof useInputCursor>) => {
   const prior = Array.from(cursor.prior.value);
   prior.pop();
-  cursor.prior.value = prior.join('');
+  cursor.prior.value = prior.join("");
 };
 
 const useRimeCompositor = (props: {
@@ -58,13 +58,16 @@ const useRimeCompositor = (props: {
     console.log(result, compositing.value, props.cursor.range.value);
     if (result.state === 0) {
       // COMMITTED
-      const committed = props.cursor.prior.value + result.committed + props.cursor.posterior.value;
+      const committed =
+        props.cursor.prior.value +
+        result.committed +
+        props.cursor.posterior.value;
       props.value.value = committed;
       reset();
     } else if (result.state === 1) {
       // ACCEPTED
-      const unprocessed = result.tail.split('');
-      const broken = result.body.split(' ');
+      const unprocessed = result.tail.split("");
+      const broken = result.body.split(" ");
       if (unprocessed.length > 0) {
         broken.push(...unprocessed);
       }
@@ -80,14 +83,15 @@ const useRimeCompositor = (props: {
       compositing.value.inputs = broken;
       candidates.value = possible;
       pagination.value.current = result.page;
-      pagination.value.isLastPage = result.isLastPage || possible.length < props.pageSize;
+      pagination.value.isLastPage =
+        result.isLastPage || possible.length < props.pageSize;
     } else {
       compositing.value.compositing = false;
       if (result.state === 2) {
         // REJECTED
         reset();
         if (result.updatedSchema) {
-          await setIME(result.updatedSchema.split('/')[0]);
+          await setIME(result.updatedSchema.split("/")[0]);
         }
       }
       if (result.state === 3 && keycode && isPrintable(keycode)) {
@@ -114,16 +118,21 @@ const useRimeCompositor = (props: {
     candidates.value = [];
     pagination.value.current = 0;
     pagination.value.isLastPage = false;
-    process('{space}');
+    process("{space}");
   };
 
   const selectCandidate = async (candidate: string, candidateIndex: number) => {
     try {
       if (/[0-9a-z]{1}/i.test(candidate)) {
-        await pipe('{space}', process, analyze);
+        await pipe("{space}", process, analyze);
       } else {
-        // @ts-ignore
-        await pipe(candidateIndex, selectCandidateOnCurrentPage, JSON.parse, analyze);
+        await pipe(
+          // @ts-ignore
+          candidateIndex,
+          selectCandidateOnCurrentPage,
+          JSON.parse,
+          analyze,
+        );
       }
     } catch (e) {
       console.error(e);
@@ -133,11 +142,11 @@ const useRimeCompositor = (props: {
 
   const onKeyPress = (keycode: string) => {
     let command = keycode;
-    if (keycode === '{BackSpace}') {
+    if (keycode === "{BackSpace}") {
       // rime 处理最后一个 backspace 和 rawInput 的 backspace 时，不是我们想要的 state
       if (!compositing.value.compositing) {
         backspaceComposite(props.cursor);
-        analyze({ state: 0, committed: '' });
+        analyze({ state: 0, committed: "" });
         return;
       }
     }
@@ -191,12 +200,13 @@ const useHandwriteCompositor = (props: {
     } catch (_) {
       candidates.value = [];
     }
-  }, 1500);
+  }, 1000);
 
-  const selectCandidate = (candidate: string = '') => {
+  const selectCandidate = (candidate: string = "") => {
     console.log(candidate);
     candidates.value = [];
-    const committed = props.cursor.prior.value + candidate + props.cursor.posterior.value;
+    const committed =
+      props.cursor.prior.value + candidate + props.cursor.posterior.value;
     props.value.value = committed;
     props.pad.value?.clean();
     compositing.value.compositing = false;
@@ -215,10 +225,10 @@ const useHandwriteCompositor = (props: {
 
   const onKeyPress = async (keycode: string) => {
     if (compositing.value.compositing) {
-      if (keycode === '{space}') {
+      if (keycode === "{space}") {
         selectCandidate(candidates.value[0]);
       }
-      if (keycode === '{BackSpace}') {
+      if (keycode === "{BackSpace}") {
         selectCandidate();
       }
     }
@@ -235,7 +245,11 @@ const useHandwriteCompositor = (props: {
     onKeyPress,
 
     compositing: computed(() => compositing.value.compositing),
-    pagination: computed<Pagination>(() => ({ isLastPage: true, current: 0, totalPages: 0 })),
+    pagination: computed<Pagination>(() => ({
+      isLastPage: true,
+      current: 0,
+      totalPages: 0,
+    })),
     candidates: computed(() => candidates.value),
   };
 };

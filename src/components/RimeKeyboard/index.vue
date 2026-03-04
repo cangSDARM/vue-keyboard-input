@@ -54,7 +54,7 @@ const props = withDefaults(
     precision: 2,
     type: KeyboardTypes.Float,
     onHandwriteRecognition: async () => [] as string[],
-  }
+  },
 );
 const emits = defineEmits<{
   close: [type?: string];
@@ -66,7 +66,7 @@ const emits = defineEmits<{
 const rawInput = defineModel("default", { default: "" });
 
 const { t } = useI18n();
-const { onKeyPress, bindKeyPress } = useKeyPress();
+const { onKeyPress, onKeyReleased, bindKeyPress } = useKeyPress();
 const { shift, unshift } = useShiftKeyboard(() => props.shiftElement || "#app");
 
 const keyboard = shallowRef<Keyboard>(null!);
@@ -117,9 +117,8 @@ const getDisplayOptions = () => {
 const handleInputUntargeted = (e: { target: Maybe<HTMLElement> }) => {
   delete e.target?.dataset[KeyboardFocusQuery];
   e.target?.dispatchEvent(
-    new CustomEvent("keyboard-send-to-screen", { bubbles: true })
+    new CustomEvent("keyboard-send-to-screen", { bubbles: true }),
   );
-  e.target?.removeEventListener("blur", handleInputUntargeted as any);
 };
 
 const open = () => {
@@ -161,7 +160,8 @@ const keyboardInit = () => {
   if (keyboard.value) return;
 
   keyboard.value = new Keyboard("simple-keyboard", {
-    onKeyPress: onKeyPress,
+    onKeyPress,
+    onKeyReleased,
     layout: Layouts as any,
     layoutName: props.layoutName,
     display: getDisplayOptions(),
@@ -204,7 +204,7 @@ const handleLang = (lang: MouseEvent | string) => {
 
   compositor.keyboardCompositor.setOption(
     "ascii_mode",
-    language.value === Languages.en
+    language.value === Languages.en,
   );
   keyboard.value.setOptions({
     display: getDisplayOptions(),
@@ -227,6 +227,11 @@ const handleEnter = () => {
 };
 
 const changeLayout = (name: keyof typeof Layouts) => {
+  // 对于锁定布局的，直接当作“完成输入操作”
+  if (props.isLockLayout && props.layoutName !== name) {
+    return handleEnter();
+  }
+
   compositor.resetAll();
   if (name === "default") {
     handleLang(language.value);
@@ -258,19 +263,23 @@ const handleArrow = (num: number) => {
     keyboard.value.setCaretPosition(index + 1);
   }
 };
-bindKeyPress("{__any__}", (_: any, button: string) => {
-  if (!visibility.value) return;
-  if (KeysSimpleToRime.Escaped.includes(button)) return;
-  // @ts-ignore
-  if (KeysSimpleToRime.Replaced[button]) {
+bindKeyPress(
+  "{__any__}",
+  (_: any, button: string) => {
+    if (!visibility.value) return;
+    if (KeysSimpleToRime.Escaped.includes(button)) return;
     // @ts-ignore
-    compositor.onKeyPress(KeysSimpleToRime.Replaced[button]);
-  } else if (KeysSimpleToRime.AsSpaced.includes(button)) {
-    compositor.onKeyPress(KeysSimpleToRime.Replaced["{space}"]);
-  } else {
-    compositor.onKeyPress(button);
-  }
-});
+    if (KeysSimpleToRime.Replaced[button]) {
+      // @ts-ignore
+      compositor.onKeyPress(KeysSimpleToRime.Replaced[button]);
+    } else if (KeysSimpleToRime.AsSpaced.includes(button)) {
+      compositor.onKeyPress(KeysSimpleToRime.Replaced["{space}"]);
+    } else {
+      compositor.onKeyPress(button);
+    }
+  },
+  { activate: "down" },
+);
 bindKeyPress("{caps}", handleLock);
 bindKeyPress("{lang}", handleLang as unknown as (e: Maybe<MouseEvent>) => void);
 bindKeyPress("{clear}", handleClear);
@@ -289,17 +298,17 @@ const handlePopClick = (e: PointerEvent) => {
     case KeyboardTypes.Float:
       // 空白区域
       if (e.target === overlayElementRef.value && props.hideOnBlur) {
-        close("blur");
+        handleEnter();
       }
       break;
     case KeyboardTypes.Shifted: {
       const elements = document.elementsFromPoint(e.clientX, e.clientY);
       const newInputElement = elements.find(
-        (element) => element instanceof HTMLInputElement
+        (element) => element instanceof HTMLInputElement,
       );
       if (!newInputElement) {
         if (!elements.includes(keyboard.value!.keyboardDOM.parentElement!)) {
-          close("blur");
+          handleEnter();
         }
         return;
       }
@@ -310,17 +319,20 @@ const handlePopClick = (e: PointerEvent) => {
 
 watch(
   () => props.inputElement,
-  (element) => {
+  (element, oldElement) => {
     cursor.element.value = element;
     if (props.type === KeyboardTypes.Shifted) {
-      element?.addEventListener("blur", handleInputUntargeted as any);
+      // 两个 input 间切换。需要给旧的发送一下指令
+      if (element && oldElement) {
+        handleInputUntargeted({ target: oldElement });
+      }
     }
     if (element) {
       open();
     } else {
       close();
     }
-  }
+  },
 );
 watch(
   () => props.layoutName,
@@ -328,7 +340,7 @@ watch(
     if (keyboard.value) {
       changeLayout(layout);
     }
-  }
+  },
 );
 watch(() => props.language, handleLang);
 watch(rawInput, (nv) => {
@@ -402,8 +414,6 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #333;
-  --keyboard-svg: #333;
 
   padding: 0 2px;
 
@@ -428,20 +438,11 @@ onMounted(() => {
   }
 
   &.locked-layout {
-    .hg-button {
-      &-num,
-      &-symbol,
-      &-abc {
-        cursor: default;
-        pointer-events: none;
-        color: rgba(var(--v-theme-on-surface), 0.25);
-      }
-    }
   }
 
   .simple-keyboard {
     font-family: Ariral, SourceHanSans, Plangothic;
-    background-color: var(--keyboard-bg, #ececec);
+    background-color: #ececec;
     z-index: calc($keyboard-z-index + 2);
 
     /** 高度 */
@@ -457,7 +458,8 @@ onMounted(() => {
 
     .hg-button {
       height: unset;
-      background: var(--keyboard-button-bg, #fff);
+      background: #fff;
+      border-color: #b5b5b5;
 
       &:hover {
         filter: brightness(0.95);
@@ -468,8 +470,8 @@ onMounted(() => {
 
       @mixin inline-svg($w, $h) {
         svg {
-          --svg-black: var(--keyboard-svg);
-          --svg-white: var(--keyboard-svg);
+          --svg-black: rgb(var(--v-theme-on-surface-variant));
+          --svg-white: rgb(var(--v-theme-on-surface-variant));
           width: $w;
           height: $h;
         }

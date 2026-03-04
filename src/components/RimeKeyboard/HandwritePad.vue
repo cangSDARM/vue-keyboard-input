@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import { useAsyncState } from '@vueuse/core';
-import SignaturePad from 'signature_pad';
-import type { HandwritePad } from './compositor';
-import { nextTick } from 'vue';
+import { useAsyncState } from "@vueuse/core";
+import SignaturePad from "signature_pad";
+import type { HandwritePad } from "./compositor";
+import { nextTick } from "vue";
 
 const props = defineProps<{
   onWrite: (image: string) => Promise<void>;
   to: string;
 }>();
-const emits = defineEmits(['error']);
+const emits = defineEmits(["error"]);
 
 const { execute: write } = useAsyncState(props.onWrite, void 0, {
   onError(e) {
-    emits('error', e);
+    emits("error", e);
   },
   immediate: false,
 });
@@ -20,7 +20,7 @@ const { execute: write } = useAsyncState(props.onWrite, void 0, {
 let padInstance: Maybe<SignaturePad> = null;
 
 const onOk = () => {
-  write(0, padInstance!.toDataURL('image/svg+xml'));
+  write(0, padInstance!.toDataURL("image/svg+xml"));
 };
 
 const vHandwriteArea = {
@@ -49,8 +49,8 @@ const vPad = {
     canvas.style.height = `${rect.height}px`;
 
     padInstance = new SignaturePad(canvas, {
-      backgroundColor: 'rgb(255, 255, 255)',
-      penColor: 'rgb(0, 0, 0)',
+      backgroundColor: "rgb(255, 255, 255)",
+      penColor: "rgb(0, 0, 0)",
       minWidth: 2 * dpr,
       maxWidth: 2 * dpr * 2,
       throttle: 16,
@@ -58,9 +58,9 @@ const vPad = {
       minDistance: 5,
     });
 
-    padInstance.addEventListener('endStroke', onOk);
+    padInstance.addEventListener("endStroke", onOk);
 
-    const ctx = canvas.getContext('2d')!;
+    const ctx = canvas.getContext("2d")!;
     ctx.scale(dpr, dpr);
   },
 };

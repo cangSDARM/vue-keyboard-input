@@ -1,26 +1,33 @@
 import { ref, shallowRef } from "vue";
 
-export default function () {
+const store = (function () {
   let element: HTMLInputElement | null = null;
 
   const visible = ref(false);
-  const value = ref('');
+  const value = ref("");
   const options = shallowRef<Record<string, any>>({});
-  const shiftElement = ref('#app');
+  const shiftElement = ref("#app");
 
   const syncInput = () => {
     if (element) {
       element.value = value.value;
-      element.dispatchEvent(new Event('input', { bubbles: true }));
+      element.dispatchEvent(new Event("input", { bubbles: true }));
     }
   };
 
-  const close = () => {
-    syncInput();
+  const close = (ele?: Maybe<HTMLInputElement>) => {
+    if (ele && ele !== element) return;
+    // only write state if the input want to close.
+    // else we don't emit anything, since we already done in keyboard
+    if (ele)
+      ele.dispatchEvent(
+        new Event("keyboard-send-to-screen", { bubbles: true }),
+      );
+
     visible.value = false;
-    element?.blur();  // make it blur
+    element?.blur(); // make it blur
     element = null;
-    value.value = '';
+    value.value = "";
     options.value = {};
   };
 
@@ -46,4 +53,6 @@ export default function () {
     open,
     close,
   };
-}
+})();
+
+export default () => store;
